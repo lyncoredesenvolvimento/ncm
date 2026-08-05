@@ -65,7 +65,7 @@
 }
 
 /* Material Symbols Config */
-.material-symbols-outlined {
+.material-symbols-outlined, .notranslate, [translate="no"] {
   font-family: 'Material Symbols Outlined';
   font-weight: normal;
   font-style: normal;
@@ -79,6 +79,10 @@
   direction: ltr;
   -webkit-font-smoothing: antialiased;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  
+  /* Proteção estrita contra tradução de ligaturas pelo Google Translate */
+  translate: no !important;
+  -webkit-translate: no !important;
 }
 
 .icon-filled {
