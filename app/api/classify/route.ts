@@ -102,15 +102,18 @@ Instruções:
         const completion = await groq.chat.completions.create({
           model: "qwen/qwen3.6-27b",
           messages,
-          max_tokens: 1024,
+          max_tokens: 4096,
         });
 
         let rawText = completion.choices[0]?.message?.content || "";
         if (!rawText) throw new Error("Resposta vazia da API Groq (imagem).");
 
-        // Extrair JSON do texto (o modelo pode retornar texto antes/depois do JSON)
+        // Remover o bloco <think>...</think> que o modelo de raciocínio gera
+        rawText = rawText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+
+        // Extrair JSON do texto
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error("Resposta da IA não contém JSON válido: " + rawText.slice(0, 200));
+        if (!jsonMatch) throw new Error("Resposta da IA não contém JSON válido: " + rawText.slice(0, 500));
         const result = JSON.parse(jsonMatch[0]);
 
         try {
@@ -139,13 +142,19 @@ Instruções:
         const completion = await groq.chat.completions.create({
           model: "llama-3.3-70b-versatile",
           messages,
-          response_format: { type: "json_object" },
-          max_tokens: 1024,
+          max_tokens: 2048,
         });
 
-        const resultText = completion.choices[0]?.message?.content;
-        if (!resultText) throw new Error("Resposta vazia da API Groq (texto).");
-        const result = JSON.parse(resultText);
+        let rawText = completion.choices[0]?.message?.content || "";
+        if (!rawText) throw new Error("Resposta vazia da API Groq (texto).");
+
+        // Limpar blocos de pensamento se houver
+        rawText = rawText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+
+        // Extrair JSON do texto
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("Resposta da IA no Passo 1 (texto) não contém JSON válido: " + rawText.slice(0, 500));
+        const result = JSON.parse(jsonMatch[0]);
 
         try {
           await writeLog({
@@ -211,14 +220,19 @@ ${answersSummary}`;
           { role: "system", content: systemPrompt },
           { role: "user", content: userContent }
         ],
-        response_format: { type: "json_object" },
-        max_tokens: 1024,
+        max_tokens: 2048,
       });
 
-      const resultText = completion.choices[0]?.message?.content;
-      if (!resultText) throw new Error("Resposta vazia da API Groq (resultado final).");
+      let rawText = completion.choices[0]?.message?.content || "";
+      if (!rawText) throw new Error("Resposta vazia da API Groq (resultado final).");
 
-      const result = JSON.parse(resultText);
+      // Limpar blocos de pensamento
+      rawText = rawText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+
+      // Extrair JSON robusto
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("Resposta da IA no Passo 2 não contém JSON válido: " + rawText.slice(0, 500));
+      const result = JSON.parse(jsonMatch[0]);
       const cleanCode = String(result.ncmCode).replace(/[^0-9]/g, "");
 
       // Buscar descrição oficial do NCM no banco Supabase
