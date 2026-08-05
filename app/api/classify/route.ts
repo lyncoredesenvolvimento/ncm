@@ -116,16 +116,20 @@ Instruções:
 
       const result = JSON.parse(resultText);
       
-      // Registrar log de busca iniciada (Auditoria)
-      await writeLog({
-        user_id: activeUser.id,
-        user_name: activeUser.user_metadata?.name || activeUser.email?.split("@")[0] || "Usuário",
-        user_email: activeUser.email,
-        action: "search",
-        entity: imageBase64 ? "Image Upload" : query,
-        module_name: "Classificação NCM (Triagem)",
-        description: `Busca iniciada por ${imageBase64 ? "Imagem" : "Texto ('" + query + "')"}. Descrição identificada pela IA: "${result.productDescription}".`
-      });
+      // Registrar log — isolado para não quebrar o fluxo principal
+      try {
+        await writeLog({
+          user_id: activeUser.id,
+          user_name: activeUser.user_metadata?.name || activeUser.email?.split("@")[0] || "Usuário",
+          user_email: activeUser.email,
+          action: "search",
+          entity: imageBase64 ? "Image Upload" : query,
+          module_name: "Classificação NCM (Triagem)",
+          description: `Busca iniciada por ${imageBase64 ? "Imagem" : "Texto ('" + query + "')"}. Descrição identificada pela IA: "${result.productDescription}".`
+        });
+      } catch (logErr) {
+        console.warn("[writeLog] Falha ao registrar log (não crítico):", logErr);
+      }
 
       return NextResponse.json(result);
     }
@@ -190,16 +194,20 @@ Instruções:
         .eq("code", cleanCode)
         .single();
 
-      // Registrar log de classificação concluída (Auditoria)
-      await writeLog({
-        user_id: activeUser.id,
-        user_name: activeUser.user_metadata?.name || activeUser.email?.split("@")[0] || "Usuário",
-        user_email: activeUser.email,
-        action: "search",
-        entity: cleanCode,
-        module_name: "Classificação NCM (Resultado)",
-        description: `Classificação concluída. NCM gerado: ${cleanCode}. Alíquotas estimadas - IPI: ${result.taxes?.ipi || "0%"}, PIS: ${result.taxes?.pis || "0%"}, COFINS: ${result.taxes?.cofins || "0%"}.`
-      });
+      // Registrar log — isolado para não quebrar o fluxo principal
+      try {
+        await writeLog({
+          user_id: activeUser.id,
+          user_name: activeUser.user_metadata?.name || activeUser.email?.split("@")[0] || "Usuário",
+          user_email: activeUser.email,
+          action: "search",
+          entity: cleanCode,
+          module_name: "Classificação NCM (Resultado)",
+          description: `Classificação concluída. NCM gerado: ${cleanCode}. Alíquotas estimadas - IPI: ${result.taxes?.ipi || "0%"}, PIS: ${result.taxes?.pis || "0%"}, COFINS: ${result.taxes?.cofins || "0%"}.`
+        });
+      } catch (logErr) {
+        console.warn("[writeLog] Falha ao registrar log (não crítico):", logErr);
+      }
 
       return NextResponse.json({
         ncmCode: cleanCode,
@@ -215,19 +223,25 @@ Instruções:
   } catch (error: any) {
     console.error("Erro na API Route /api/classify:", error);
     
-    // Gravar log de erro no banco
-    await writeErrorLog({
-      user_id: activeUser?.id || null,
-      user_name: activeUser?.user_metadata?.name || "Desconhecido",
-      user_email: activeUser?.email || "desconhecido@ncm.local",
-      route: "/api/classify",
-      message: error.message || "Erro desconhecido na classificação fiscal.",
-      stack: error.stack || null,
-      status_code: 500
-    });
+    // Gravar log de erro — isolado para não causar erro secundário
+    try {
+      await writeErrorLog({
+        user_id: activeUser?.id || null,
+        user_name: activeUser?.user_metadata?.name || "Desconhecido",
+        user_email: activeUser?.email || "desconhecido@ncm.local",
+        route: "/api/classify",
+        message: error.message || "Erro desconhecido na classificação fiscal.",
+        stack: error.stack || null,
+        status_code: 500
+      });
+    } catch (logErr) {
+      console.warn("[writeErrorLog] Falha ao registrar log de erro:", logErr);
+    }
 
+    // Retornar mensagem de erro com detalhes para debug
+    const errMsg = error?.message || String(error) || "Erro desconhecido";
     return NextResponse.json(
-      { error: "Erro interno no processamento da classificação fiscal." },
+      { error: `Erro interno: ${errMsg}` },
       { status: 500 }
     );
   }
