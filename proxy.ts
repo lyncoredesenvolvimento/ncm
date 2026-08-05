@@ -10,7 +10,7 @@ import type { NextRequest } from "next/server";
  * Estratégia: detectar o cookie de sessão do Supabase para saber se o usuário
  * está autenticado, sem chamar o SDK (que pode usar APIs Node.js internas).
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // O Supabase salva a sessão num cookie cujo nome segue o padrão:
