@@ -29,3 +29,9 @@ jspm_packages/
 # Sistema operacional
 .DS_Store
 Thumbs.db
+
+# Arquivos do projeto ignorados a pedido do usuário
+Manual-de-seguranca.md
+Tabela_NCM_Vigente_20260804.xlsx
+stitch_portal_ncm_inteligente/
+
