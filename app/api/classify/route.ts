@@ -63,6 +63,30 @@ async function searchNcmCandidates(queryText: string) {
   return data || [];
 }
 
+// Função resiliente com sistema de Failover/Fallback de Modelos para evitar estouro de Cota 429
+async function createGroqCompletion(groq: Groq, options: { messages: any[]; max_tokens?: number }) {
+  const models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "qwen/qwen3.6-27b"];
+
+  for (let i = 0; i < models.length; i++) {
+    const model = models[i];
+    try {
+      const completion = await groq.chat.completions.create({
+        model: model,
+        messages: options.messages,
+        max_tokens: options.max_tokens || 2048,
+      });
+      return completion;
+    } catch (err: any) {
+      console.warn(`[Groq Failover] Modelo ${model} falhou ou atingiu limite: ${err.message}. Tentando próximo modelo...`);
+      if (i === models.length - 1) {
+        throw err;
+      }
+    }
+  }
+
+  throw new Error("Todos os modelos falharam na resposta.");
+}
+
 export async function POST(request: NextRequest) {
   let activeUser: any = null;
 
@@ -152,8 +176,7 @@ Instruções adicionais:
   }
 }`;
 
-      const completion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+      const completion = await createGroqCompletion(groq, {
         messages: [{ role: "user", content: systemPrompt }],
         max_tokens: 2048,
       });
@@ -265,8 +288,7 @@ Instruções:
   ]
 }`;
 
-      const completion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+      const completion = await createGroqCompletion(groq, {
         messages: [{ role: "user", content: systemPrompt }],
         max_tokens: 2048,
       });
@@ -342,8 +364,7 @@ Regras de Seleção:
   }
 }`;
 
-      const completion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+      const completion = await createGroqCompletion(groq, {
         messages: [{ role: "user", content: systemPrompt }],
         max_tokens: 2048,
       });
