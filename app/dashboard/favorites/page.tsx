@@ -9,6 +9,7 @@ interface FavoriteNCM {
   id: number;
   ncm_code: string;
   created_at: string;
+  description?: string;
   ncms: {
     description: string;
     full_description: string;
@@ -38,10 +39,10 @@ export default function FavoritesPage() {
       }
       setUserId(user.id);
 
-      // 1. Carregar os favoritos do usuário
+      // 1. Carregar os favoritos do usuário incluindo o campo description
       const { data: favsData, error: fetchErr } = await supabase
         .from("favorites")
-        .select("id, ncm_code, created_at")
+        .select("id, ncm_code, created_at, description")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -63,6 +64,7 @@ export default function FavoritesPage() {
             id: fav.id,
             ncm_code: fav.ncm_code,
             created_at: fav.created_at,
+            description: fav.description,
             ncms: matched ? {
               description: matched.description,
               full_description: matched.full_description,
@@ -115,9 +117,9 @@ export default function FavoritesPage() {
     if (!q) return true;
     
     const code = fav.ncm_code.toLowerCase();
-    const desc = fav.ncms?.description.toLowerCase() || "";
+    const desc = (fav.ncms?.description || fav.description || "").toLowerCase();
     const fullDesc = fav.ncms?.full_description.toLowerCase() || "";
-    const chapter = fav.ncms?.chapter.toLowerCase() || "";
+    const chapter = (fav.ncms?.chapter || fav.ncm_code.slice(0, 2)).toLowerCase();
 
     return code.includes(q) || desc.includes(q) || fullDesc.includes(q) || chapter.includes(q);
   });
@@ -202,7 +204,7 @@ export default function FavoritesPage() {
                   <div className="flex justify-between items-start gap-4">
                     <div>
                       <p className="font-sans text-[10px] text-on-surface-variant font-bold flex items-center gap-1 uppercase tracking-wider">
-                        Capítulo {fav.ncms?.chapter}
+                        Capítulo {fav.ncms?.chapter || fav.ncm_code.slice(0, 2)}
                       </p>
                       <h2 className="font-sans text-xl font-extrabold text-primary tracking-wide mt-1">
                         {fav.ncm_code.slice(0, 4)}.{fav.ncm_code.slice(4, 6)}.{fav.ncm_code.slice(6, 8)}
@@ -222,12 +224,12 @@ export default function FavoritesPage() {
                   </div>
 
                   <p className="font-sans text-xs text-on-surface leading-relaxed line-clamp-3 bg-surface-bright p-3 rounded border border-outline-variant/40">
-                    {fav.ncms?.description || "Descrição não cadastrada."}
+                    {fav.ncms?.description || fav.description || "Descrição não cadastrada."}
                   </p>
 
-                  {fav.ncms?.full_description && (
-                    <div className="text-[10px] text-outline font-sans truncate" title={fav.ncms.full_description}>
-                      {fav.ncms.full_description.split(" > ").slice(0, -1).join(" > ")}
+                  {(fav.ncms?.full_description || fav.description) && (
+                    <div className="text-[10px] text-outline font-sans truncate" title={fav.ncms?.full_description || fav.description}>
+                      {fav.ncms?.full_description ? fav.ncms.full_description.split(" > ").slice(0, -1).join(" > ") : fav.description}
                     </div>
                   )}
                 </article>

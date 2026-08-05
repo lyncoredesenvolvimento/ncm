@@ -216,12 +216,15 @@ function SearchContent() {
         if (error) throw error;
         setIsFavorited(false);
       } else {
-        // Inserir
+        // Inserir salvando a descrição ou o nome do produto
         const { error } = await supabase
           .from("favorites")
           .insert({
             user_id: userId,
-            ncm_code: result.ncmCode
+            ncm_code: result.ncmCode,
+            description: result.officialDescription && result.officialDescription !== "Descrição oficial não encontrada na base local."
+              ? result.officialDescription
+              : (productName || "Classificação NCM Inteligente")
           });
         
         if (error) throw error;
