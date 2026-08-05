@@ -52,8 +52,9 @@ export default function DashboardLayout({
       
       {/* Mobile Top Navigation (Visible on lg-) */}
       <nav className="lg:hidden bg-surface-container-lowest flex justify-between items-center w-full px-margin-mobile h-16 fixed top-0 z-50 border-b border-outline-variant">
-        <div className="font-sans text-lg font-bold text-primary">
-          NCM Compliant
+        <div className="flex items-center gap-2">
+          <img src="/logo.png" alt="Lyncore Logo" className="w-7 h-7 object-contain" />
+          <span className="font-sans text-sm font-bold text-primary">NCM Lyncore</span>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/dashboard" className="p-2 text-primary hover:bg-surface-container rounded-full transition-colors">
@@ -75,13 +76,13 @@ export default function DashboardLayout({
       {/* Desktop Side Navigation (Visible on lg+) */}
       <aside className="hidden lg:flex flex-col h-screen w-64 fixed left-0 top-0 border-r border-outline-variant bg-surface-container-lowest z-50">
         {/* Header */}
-        <div className="p-6 border-b border-outline-variant flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center text-on-primary-container">
-            <span className="material-symbols-outlined icon-filled">policy</span>
+        <div className="p-5 border-b border-outline-variant flex items-center gap-3">
+          <div className="w-12 h-12 flex items-center justify-center">
+            <img src="/logo.png" alt="Lyncore Logo" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="font-sans text-sm font-extrabold text-primary">Compliance Portal</h1>
-            <p className="font-sans text-xs text-on-surface-variant">Regulatory Trade Data</p>
+            <h1 className="font-sans text-sm font-extrabold text-primary">NCM Lyncore</h1>
+            <p className="font-sans text-[10px] text-on-surface-variant">Portal NCM Inteligente</p>
           </div>
         </div>
 
