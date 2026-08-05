@@ -36,13 +36,17 @@ export default function LoginPage() {
 
     // Verificar se o Supabase está configurado com variáveis de ambiente reais
     if (!isSupabaseConfigured()) {
+      const debugMsg = "ENV DEBUG: NEXT_PUBLIC_SUPABASE_URL=" + process.env.NEXT_PUBLIC_SUPABASE_URL + " | NEXT_PUBLIC_SUPABASE_ANON_KEY=" + (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "SET" : "MISSING");
+      alert("Supabase NÃO configurado!\n" + debugMsg);
       setMessage({
-        text: "Erro de configuração: As variáveis de ambiente do Supabase (NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY) não estão configuradas no servidor. Por favor, adicione-as nas configurações de ambiente da Vercel.",
+        text: "Erro de configuração: variáveis NEXT_PUBLIC_ não encontradas.",
         type: "error"
       });
       setLoading(false);
       return;
     }
+
+    alert("Supabase OK! Tentando login com: " + email);
 
     try {
       if (mode === "login") {
