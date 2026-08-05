@@ -5,9 +5,9 @@ import { writeLog, writeErrorLog } from "@/lib/security";
 
 const groqApiKey = process.env.GROQ_API_KEY;
 
-// Função auxiliar para buscar candidatos NCM na base local do Supabase
+// Função de busca inteligente nos NCMs oficiais do Supabase
 async function searchNcmCandidates(queryText: string) {
-  // Ignorar adjetivos genéricos (cores, preposições) para não travar a busca
+  // Ignorar adjetivos genéricos (cores, preposições) para focar na essência
   const ignoredWords = new Set([
     "para", "com", "de", "do", "da", "em", "um", "uma", "o", "a", "os", "as",
     "azul", "vermelho", "vermelha", "preto", "preta", "amarelo", "amarela",
@@ -25,24 +25,28 @@ async function searchNcmCandidates(queryText: string) {
     .select("code, description, full_description, chapter");
 
   if (words.length > 0) {
-    // Aplica filtros .ilike() consecutivos para os termos significativos
+    // Busca flexível e abrangente pesquisando na descrição e na hierarquia inteira do NCM
+    const conditions: string[] = [];
     words.forEach(w => {
-      dbQuery = dbQuery.ilike("description", `%${w}%`);
+      conditions.push(`description.ilike.%${w}%`);
+      conditions.push(`full_description.ilike.%${w}%`);
     });
+    dbQuery = dbQuery.or(conditions.join(","));
   } else {
-    dbQuery = dbQuery.ilike("description", `%${queryText}%`);
+    dbQuery = dbQuery.or(`description.ilike.%${queryText}%,full_description.ilike.%${queryText}%`);
   }
 
-  let { data, error } = await dbQuery.limit(20);
+  let { data, error } = await dbQuery.limit(25);
   if (error) throw error;
 
-  // FALLBACK: Se a busca estrita não trouxer resultados, buscar pelo objeto principal (primeira palavra)
+  // FALLBACK: Se a busca de múltiplos termos não trouxer nada, buscar pelo termo principal na hierarquia
   if ((!data || data.length === 0) && words.length > 0) {
+    const mainTerm = words[0];
     const fallbackQuery = await supabaseAdmin
       .from("ncms")
       .select("code, description, full_description, chapter")
-      .ilike("description", `%${words[0]}%`)
-      .limit(20);
+      .or(`description.ilike.%${mainTerm}%,full_description.ilike.%${mainTerm}%`)
+      .limit(25);
     
     if (fallbackQuery.error) throw fallbackQuery.error;
     data = fallbackQuery.data;
@@ -63,7 +67,7 @@ async function searchNcmCandidates(queryText: string) {
   return data || [];
 }
 
-// Função resiliente com sistema de Failover/Fallback de Modelos para evitar estouro de Cota 429
+// Sistema de Failover/Fallback de Modelos da Groq para evitar estouro de Cota 429
 async function createGroqCompletion(groq: Groq, options: { messages: any[]; max_tokens?: number }) {
   const models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "qwen/qwen3.6-27b"];
 
@@ -77,7 +81,7 @@ async function createGroqCompletion(groq: Groq, options: { messages: any[]; max_
       });
       return completion;
     } catch (err: any) {
-      console.warn(`[Groq Failover] Modelo ${model} falhou ou atingiu limite: ${err.message}. Tentando próximo modelo...`);
+      console.warn(`[Groq Failover] Modelo ${model} falhou: ${err.message}. Tentando próximo modelo...`);
       if (i === models.length - 1) {
         throw err;
       }
@@ -162,6 +166,7 @@ Regras Estritas de Classificação:
 
 Código NCM: "${ncmCode}"
 Descrição oficial cadastrada: "${ncmData.description}"
+Hierarquia oficial completa: "${ncmData.full_description}"
 
 Instruções adicionais:
 1. Forneça uma justificativa técnica detalhada e profissional com base nas Regras Gerais de Interpretação do SH (RGI).
@@ -264,25 +269,26 @@ Instruções adicionais:
         );
       }
 
-      // 3. IA FORMULA AS PERGUNTAS DE TRIAGEM BASEADAS NOS CANDIDATOS REAIS DO BANCO
+      // 3. IA FORMULA AS PERGUNTAS DE TRIAGEM BASEADAS NA PLANILHA OFICIAL DO BANCO
       const systemPrompt = `Você é um especialista em classificação fiscal do Mercosul e análise de NCM (Nomenclatura Comum do Mercosul).
-Sua tarefa é analisar o produto pesquisado pelo usuário ("${searchQuery}") e a lista de candidatos NCM reais retornados do nosso banco de dados oficial.
-Formule perguntas inteligentes de triagem com opções excludentes para ajudar o usuário a selecionar o NCM exato.
+Sua tarefa é analisar o produto pesquisado pelo usuário ("${searchQuery}") e a lista de candidatos NCM reais extraídos exclusivamente do nosso banco de dados oficial.
+Formule perguntas inteligentes de triagem com base nas diferenças reais da planilha oficial de NCMs para ajudar o usuário a selecionar o NCM exato.
 
 Produto do Usuário: "${searchQuery}"
 
-Lista de Candidatos NCM Reais do Banco de Dados:
-${ncmCandidates.map(n => `- Código: ${n.code} | Descrição: ${n.description}`).join("\n")}
+Lista de Candidatos NCM Reais da Planilha Oficial:
+${ncmCandidates.map(n => `- Código: ${n.code} | Descrição: ${n.description} | Hierarquia Oficial: ${n.full_description}`).join("\n")}
 
-Instruções:
-1. Formule de 2 a 4 perguntas objetivas com opções excludentes específicas para diferenciar esses candidatos reais (por exemplo: tipo de ponta, mecanismo de carga, uso principal, etc.).
-2. Responda APENAS com JSON válido no formato:
+Instruções Estritas:
+1. Formule de 2 a 4 perguntas objetivas com opções excludentes específicas para diferenciar as opções acima da planilha oficial.
+2. Suas perguntas e opções DEVEM ser baseadas única e exclusivamente nas características e distinções técnicas descritas nos candidatos acima.
+3. Responda APENAS com JSON válido no formato:
 {
   "productDescription": "${searchQuery}",
   "questions": [
     {
       "id": "pergunta_1",
-      "text": "Texto da pergunta em português?",
+      "text": "Texto da pergunta com base na planilha oficial?",
       "options": ["Opção A", "Opção B", "Opção C"]
     }
   ]
@@ -309,7 +315,7 @@ Instruções:
           action: "search",
           entity: imageBase64 ? "Image Upload" : searchQuery,
           module_name: "Classificação NCM (Triagem)",
-          description: `Triagem iniciada por ${imageBase64 ? "Imagem" : "Texto ('" + searchQuery + "')"}. Candidatos encontrados: ${ncmCandidates.length}.`
+          description: `Triagem iniciada por ${imageBase64 ? "Imagem" : "Texto ('" + searchQuery + "')"}. Candidatos oficiais encontrados: ${ncmCandidates.length}.`
         });
       } catch (logErr) {}
 
@@ -340,7 +346,7 @@ Instruções:
 
       // IA atua como JUIZ para selecionar o NCM exato da lista do banco e gerar a justificativa
       const systemPrompt = `Você é um especialista em classificação fiscal do Mercosul, atuando como um validador estrito de NCM.
-Sua tarefa é analisar o produto do usuário, as respostas fornecidas na triagem, e a lista de candidatos NCM reais do banco de dados, escolhendo qual candidato da lista é a classificação correta.
+Sua tarefa é analisar o produto do usuário, as respostas fornecidas na triagem, e a lista de candidatos NCM reais da planilha oficial do banco de dados, escolhendo qual candidato da lista é a classificação correta.
 
 Produto do Usuário: "${query}"
 
@@ -348,7 +354,7 @@ Respostas fornecidas na triagem:
 ${answersSummary}
 
 Candidatos NCM Reais da Planilha Oficial:
-${ncmCandidates.map(n => `- Código: ${n.code} | Descrição: ${n.description}`).join("\n")}
+${ncmCandidates.map(n => `- Código: ${n.code} | Descrição: ${n.description} | Hierarquia Oficial: ${n.full_description}`).join("\n")}
 
 Regras de Seleção:
 1. PESQUISA EXCLUSIVA NO BANCO DE DADOS: Você deve escolher OBRIGATORIAMENTE um código NCM que esteja presente na lista de Candidatos NCM Reais acima. É proibido inventar ou retornar um código que não esteja listado como candidato real.
