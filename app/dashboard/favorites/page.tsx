@@ -38,25 +38,43 @@ export default function FavoritesPage() {
       }
       setUserId(user.id);
 
-      // Fazer JOIN simples de public.favorites com public.ncms
-      const { data, error: fetchErr } = await supabase
+      // 1. Carregar os favoritos do usuário
+      const { data: favsData, error: fetchErr } = await supabase
         .from("favorites")
-        .select(`
-          id,
-          ncm_code,
-          created_at,
-          ncms (
-            description,
-            full_description,
-            chapter
-          )
-        `)
+        .select("id, ncm_code, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (fetchErr) throw fetchErr;
 
-      setFavorites((data as any) || []);
+      if (favsData && favsData.length > 0) {
+        // 2. Coletar os códigos de NCM para buscar as descrições na tabela local
+        const codes = favsData.map(f => f.ncm_code);
+        
+        const { data: ncmData, error: ncmErr } = await supabase
+          .from("ncms")
+          .select("code, description, full_description, chapter")
+          .in("code", codes);
+
+        // Mesmo se houver erro ao buscar descrições, mostramos os favoritos
+        const mapped = favsData.map(fav => {
+          const matched = ncmData?.find(n => n.code === fav.ncm_code) || null;
+          return {
+            id: fav.id,
+            ncm_code: fav.ncm_code,
+            created_at: fav.created_at,
+            ncms: matched ? {
+              description: matched.description,
+              full_description: matched.full_description,
+              chapter: matched.chapter
+            } : null
+          };
+        });
+
+        setFavorites(mapped);
+      } else {
+        setFavorites([]);
+      }
     } catch (err: any) {
       setError(err.message || "Erro ao carregar favoritos.");
     } finally {
