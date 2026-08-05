@@ -104,7 +104,7 @@ export default function LoginPage() {
         {/* Header / Logo Area */}
         <div className="flex flex-col items-center mb-6">
           <div className="w-20 h-20 flex items-center justify-center mb-4">
-            <img src="/logo.png" alt="Lyncore Logo" className="w-full h-full object-contain" />
+            <img src="/logo.svg" alt="Lyncore Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="font-sans text-2xl font-bold text-primary text-center">NCM Lyncore</h1>
           <p className="font-sans text-sm text-on-surface-variant text-center mt-1">

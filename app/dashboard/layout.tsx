@@ -53,7 +53,7 @@ export default function DashboardLayout({
       {/* Mobile Top Navigation (Visible on lg-) */}
       <nav className="lg:hidden bg-surface-container-lowest flex justify-between items-center w-full px-margin-mobile h-16 fixed top-0 z-50 border-b border-outline-variant">
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Lyncore Logo" className="w-7 h-7 object-contain" />
+          <img src="/logo.svg" alt="Lyncore Logo" className="w-7 h-7 object-contain" />
           <span className="font-sans text-sm font-bold text-primary">NCM Lyncore</span>
         </div>
         <div className="flex items-center gap-2">
@@ -78,7 +78,7 @@ export default function DashboardLayout({
         {/* Header */}
         <div className="p-5 border-b border-outline-variant flex items-center gap-3">
           <div className="w-12 h-12 flex items-center justify-center">
-            <img src="/logo.png" alt="Lyncore Logo" className="w-full h-full object-contain" />
+            <img src="/logo.svg" alt="Lyncore Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="font-sans text-sm font-extrabold text-primary">NCM Lyncore</h1>
