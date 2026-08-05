@@ -198,7 +198,7 @@ Instruções adicionais:
 
         const visionCompletion = await groq.chat.completions.create({
           model: "qwen/qwen3.6-27b",
-          messages: visionMessages,
+          messages: visionMessages as any,
           max_tokens: 128,
         });
 
