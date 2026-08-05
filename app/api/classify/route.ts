@@ -67,15 +67,27 @@ export async function POST(request: NextRequest) {
         .eq("code", ncmCode)
         .single();
 
+      if (!ncmData) {
+        return NextResponse.json(
+          { error: "Erro de correspondência: Não foi possível localizar uma classificação 100% segura para este produto na planilha oficial. Por favor, forneça mais detalhes técnicos." },
+          { status: 422 }
+        );
+      }
+
       // Vamos pedir à IA para dar a justificativa da classificação para este NCM e estimar impostos
-      const systemPrompt = `Você é um especialista em classificação fiscal do Mercosul e análise de NCM.
+      const systemPrompt = `Você é um especialista em classificação fiscal do Mercosul, atuando como um validador estrito de NCM (Nomenclatura Comum do Mercosul).
 Sua tarefa é analisar o código NCM fornecido e gerar uma justificativa técnica da sua classificação e estimar as alíquotas nacionais aplicáveis.
 
-Código NCM: "${ncmCode}"
-Descrição oficial cadastrada: "${ncmData?.description || "Não disponível"}"
+Regras Estritas de Classificação:
+1. PESQUISA EXCLUSIVA NO BANCO DE DADOS: A classificação deve se ater ao código NCM fornecido: "${ncmCode}" e à descrição oficial da planilha: "${ncmData.description}".
+2. BUSCA LITERAL E REGRAS GERAIS DE INTERPRETAÇÃO (RGI): Justifique a classificação de acordo com a estrutura da Nomenclatura (Capítulo -> Posição -> Subposição -> Item) e aplique as Regras Gerais de Interpretação do SH (RGI).
+3. PROIBIÇÃO DE ALUCINAÇÕES (VETO DE IA): Não mude nem invente códigos. Justifique estritamente o código fornecido.
 
-Instruções:
-1. Forneça uma justificativa técnica detalhada e profissional da classificação fiscal para este NCM com base nas Regras Gerais de Interpretação do SH (RGI).
+Código NCM: "${ncmCode}"
+Descrição oficial cadastrada: "${ncmData.description}"
+
+Instruções adicionais:
+1. Forneça uma justificativa técnica detalhada e profissional com base nas Regras Gerais de Interpretação do SH (RGI).
 2. Estime as alíquotas nacionais de impostos (IPI, PIS, COFINS) típicas para este tipo de produto.
 3. Responda APENAS com JSON válido, sem texto adicional:
 {
@@ -121,8 +133,8 @@ Instruções:
 
       return NextResponse.json({
         ncmCode: ncmCode,
-        officialDescription: ncmData?.description || "Descrição oficial não encontrada na base local.",
-        fullHierarchy: ncmData?.full_description || null,
+        officialDescription: ncmData.description,
+        fullHierarchy: ncmData.full_description,
         justification: result.justification,
         taxes: result.taxes
       });
@@ -265,10 +277,15 @@ Instruções:
         })
         .join("\n");
 
-      const systemPrompt = `Você é um especialista em classificação fiscal do Mercosul e análise de NCM.
-Com base nas informações do produto e nas respostas de triagem, determine o código NCM correto de 8 dígitos.
+      const systemPrompt = `Você é um especialista em classificação fiscal do Mercosul, atuando como um validador estrito de NCM (Nomenclatura Comum do Mercosul).
+Com base nas informações do produto e nas respostas de triagem fornecidas pelo usuário, determine o código NCM correto de 8 dígitos.
 
-Instruções:
+Regras Estritas de Classificação:
+1. PESQUISA EXCLUSIVA NO BANCO DE DADOS: O código NCM deve ser baseado estritamente na estrutura da nomenclatura oficial e coincidir com um código real. Nunca invente, assuma ou tente adivinhar um código NCM por conta própria.
+2. BUSCA LITERAL E REGRAS GERAIS DE INTERPRETAÇÃO (RGI): Navegue pela estrutura da Nomenclatura (Capítulo -> Posição -> Subposição -> Item). Se o produto possui ponta metálica com esfera para escrita, ele pertence obrigatoriamente à posição 96.08 (Canetas), sendo legalmente impossível classificá-lo na posição 96.09 (Lápis).
+3. PROIBIÇÃO DE ALUCINAÇÕES (VETO DE IA): Valide se a descrição teórica do código corresponde exatamente à natureza do produto. Se a descrição técnica do código final não bater com a natureza do produto pesquisado, REJEITE o código.
+
+Instruções de Resposta:
 1. Determine o código NCM de 8 dígitos (ex: "84713012", sem pontos).
 2. Forneça justificativa técnica com base nas Regras Gerais de Interpretação do SH (RGI).
 3. Estime alíquotas nacionais de IPI, PIS, COFINS.
@@ -317,6 +334,13 @@ ${answersSummary}`;
         .eq("code", cleanCode)
         .single();
 
+      if (!ncmData) {
+        return NextResponse.json(
+          { error: "Erro de correspondência: Não foi possível localizar uma classificação 100% segura para este produto na planilha oficial. Por favor, forneça mais detalhes técnicos." },
+          { status: 422 }
+        );
+      }
+
       try {
         await writeLog({
           user_id: activeUser.id,
@@ -333,8 +357,8 @@ ${answersSummary}`;
 
       return NextResponse.json({
         ncmCode: cleanCode,
-        officialDescription: ncmData?.description || "Descrição oficial não encontrada na base local.",
-        fullHierarchy: ncmData?.full_description || null,
+        officialDescription: ncmData.description,
+        fullHierarchy: ncmData.full_description,
         justification: result.justification,
         taxes: result.taxes
       });
