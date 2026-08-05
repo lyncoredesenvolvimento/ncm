@@ -100,15 +100,18 @@ Instruções:
         ];
 
         const completion = await groq.chat.completions.create({
-          model: "llama-3.2-11b-vision-preview",
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
           messages,
-          response_format: { type: "json_object" },
           max_tokens: 1024,
         });
 
-        const resultText = completion.choices[0]?.message?.content;
-        if (!resultText) throw new Error("Resposta vazia da API Groq (imagem).");
-        const result = JSON.parse(resultText);
+        let rawText = completion.choices[0]?.message?.content || "";
+        if (!rawText) throw new Error("Resposta vazia da API Groq (imagem).");
+
+        // Extrair JSON do texto (o modelo pode retornar texto antes/depois do JSON)
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("Resposta da IA não contém JSON válido: " + rawText.slice(0, 200));
+        const result = JSON.parse(jsonMatch[0]);
 
         try {
           await writeLog({
