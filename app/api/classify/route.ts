@@ -53,6 +53,81 @@ export async function POST(request: NextRequest) {
 
     const groq = new Groq({ apiKey: groqApiKey });
 
+    // ─── PASSO DIRETO: Busca direta por NCM existente ─────────────────────────
+    if (step === "direct" || step === 3) {
+      const { ncmCode } = body;
+      if (!ncmCode || ncmCode.length !== 8) {
+        return NextResponse.json({ error: "Código NCM inválido." }, { status: 400 });
+      }
+
+      // Buscar a descrição oficial do NCM no nosso banco de dados do Supabase
+      const { data: ncmData } = await supabaseAdmin
+        .from("ncms")
+        .select("code, description, full_description")
+        .eq("code", ncmCode)
+        .single();
+
+      // Vamos pedir à IA para dar a justificativa da classificação para este NCM e estimar impostos
+      const systemPrompt = `Você é um especialista em classificação fiscal do Mercosul e análise de NCM.
+Sua tarefa é analisar o código NCM fornecido e gerar uma justificativa técnica da sua classificação e estimar as alíquotas nacionais aplicáveis.
+
+Código NCM: "${ncmCode}"
+Descrição oficial cadastrada: "${ncmData?.description || "Não disponível"}"
+
+Instruções:
+1. Forneça uma justificativa técnica detalhada e profissional da classificação fiscal para este NCM com base nas Regras Gerais de Interpretação do SH (RGI).
+2. Estime as alíquotas nacionais de impostos (IPI, PIS, COFINS) típicas para este tipo de produto.
+3. Responda APENAS com JSON válido, sem texto adicional:
+{
+  "justification": "Sua justificativa detalhada e técnica aqui...",
+  "taxes": {
+    "ipi": "Alíquota % ou Isento",
+    "pis": "Alíquota %",
+    "cofins": "Alíquota %"
+  }
+}`;
+
+      const completion = await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          { role: "user", content: systemPrompt }
+        ],
+        max_tokens: 2048,
+      });
+
+      let rawText = completion.choices[0]?.message?.content || "";
+      if (!rawText) throw new Error("Resposta vazia da API Groq (busca direta).");
+
+      rawText = rawText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("Resposta da IA na busca direta não contém JSON válido.");
+      const result = JSON.parse(jsonMatch[0]);
+
+      // Registrar log de auditoria
+      try {
+        await writeLog({
+          user_id: activeUser.id,
+          user_name: activeUser.user_metadata?.name || activeUser.email?.split("@")[0] || "Usuário",
+          user_email: activeUser.email,
+          action: "search",
+          entity: ncmCode,
+          module_name: "Classificação NCM (Direta)",
+          description: `Pesquisa direta do código NCM: ${ncmCode}.`
+        });
+      } catch (logErr) {
+        console.warn("[writeLog] Falha ao registrar log (não crítico):", logErr);
+      }
+
+      return NextResponse.json({
+        ncmCode: ncmCode,
+        officialDescription: ncmData?.description || "Descrição oficial não encontrada na base local.",
+        fullHierarchy: ncmData?.full_description || null,
+        justification: result.justification,
+        taxes: result.taxes
+      });
+    }
+
     // ─── PASSO 1: Triagem Inicial (Texto ou Imagem) ───────────────────────────
     if (step === 1) {
       const systemPrompt = `Você é um especialista em classificação fiscal do Mercosul e análise de NCM (Nomenclatura Comum do Mercosul).

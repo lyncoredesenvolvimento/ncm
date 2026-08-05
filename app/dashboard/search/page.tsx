@@ -42,10 +42,47 @@ function SearchContent() {
       const { data: { session } } = await supabase.auth.getSession();
       const accessToken = session?.access_token || "";
 
-      // Iniciar classificação inicial (Passo 1)
+      // Iniciar classificação inicial ou busca direta
       try {
         setLoading(true);
         setError(null);
+
+        // Verificar se é uma busca direta por código NCM (8 dígitos após limpar pontuações)
+        const cleanCode = query.replace(/[^0-9]/g, "");
+        if (cleanCode.length === 8 && !isImageMode) {
+          const res = await fetch("/api/classify", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+              step: "direct",
+              ncmCode: cleanCode
+            })
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || "Erro na busca direta do código NCM.");
+          }
+
+          setResult(data);
+          setFinished(true);
+
+          if (user.id) {
+            const { data: fav } = await supabase
+              .from("favorites")
+              .select("id")
+              .eq("user_id", user.id)
+              .eq("ncm_code", data.ncmCode)
+              .maybeSingle();
+            
+            setIsFavorited(!!fav);
+          }
+          setLoading(false);
+          return;
+        }
 
         let imageBase64 = null;
         if (isImageMode) {

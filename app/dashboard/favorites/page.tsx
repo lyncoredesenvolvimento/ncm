@@ -192,7 +192,12 @@ export default function FavoritesPage() {
               {filteredFavorites.map((fav) => (
                 <article 
                   key={fav.id}
-                  className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 flex flex-col justify-between gap-4 shadow-2xs hover:shadow-xs transition-shadow relative"
+                  onClick={(e) => {
+                    // Se clicar no botão de desfavoritar (ou dentro dele), não navega
+                    if ((e.target as HTMLElement).closest("button")) return;
+                    router.push(`/dashboard/search?q=${fav.ncm_code}`);
+                  }}
+                  className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 flex flex-col justify-between gap-4 shadow-2xs hover:shadow-sm hover:border-primary/50 hover:bg-surface-container-lowest transition-all relative cursor-pointer group"
                 >
                   <div className="flex justify-between items-start gap-4">
                     <div>
