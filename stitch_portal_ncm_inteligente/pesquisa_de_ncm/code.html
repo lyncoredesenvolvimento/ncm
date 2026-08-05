@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NCM Compliant - Search</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "on-surface-variant": "#43474f",
+                        "on-background": "#191c1d",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e7e8e9",
+                        "error": "#ba1a1a",
+                        "on-surface": "#191c1d",
+                        "on-tertiary": "#ffffff",
+                        "secondary": "#5f5e5e",
+                        "on-tertiary-fixed": "#191c1f",
+                        "secondary-fixed": "#e5e2e1",
+                        "error-container": "#ffdad6",
+                        "inverse-on-surface": "#f0f1f2",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "on-secondary-fixed-variant": "#474746",
+                        "surface-container": "#edeeef",
+                        "tertiary-container": "#313437",
+                        "tertiary-fixed-dim": "#c4c7ca",
+                        "secondary-container": "#e2dfde",
+                        "primary": "#001e40",
+                        "outline": "#737780",
+                        "tertiary-fixed": "#e0e2e6",
+                        "primary-fixed": "#d5e3ff",
+                        "on-primary": "#ffffff",
+                        "on-primary-container": "#799dd6",
+                        "surface-container-low": "#f3f4f5",
+                        "surface-dim": "#d9dadb",
+                        "surface-variant": "#e1e3e4",
+                        "on-secondary-container": "#636262",
+                        "on-primary-fixed": "#001b3c",
+                        "on-tertiary-fixed-variant": "#44474a",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "on-error": "#ffffff",
+                        "on-tertiary-container": "#999ca0",
+                        "surface-bright": "#f8f9fa",
+                        "tertiary": "#1b1f22",
+                        "background": "#f8f9fa",
+                        "surface-container-highest": "#e1e3e4",
+                        "outline-variant": "#c3c6d1",
+                        "inverse-surface": "#2e3132",
+                        "surface": "#f8f9fa",
+                        "surface-tint": "#3a5f94",
+                        "primary-container": "#003366",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "inverse-primary": "#a7c8ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-desktop": "40px",
+                        "unit": "4px",
+                        "container-max": "1280px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "code-ncm": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["26px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "code-ncm": ["16px", { "lineHeight": "24px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for data heavy interfaces */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: #c3c6d1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background-color: #737780; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md antialiased flex h-screen overflow-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- Mobile Top Navigation (Visible on lg-) -->
+<nav class="lg:hidden bg-surface dark:bg-surface-container-highest flex justify-between items-center w-full px-margin-mobile h-16 fixed top-0 z-50 border-b border-outline-variant">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-on-surface">
+            NCM Compliant
+        </div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary cursor-pointer hover:bg-surface-container-low transition-colors duration-200 p-2 rounded-full">search</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container-low transition-colors duration-200 p-2 rounded-full">logout</span>
+</div>
+</nav>
+<!-- Desktop Side Navigation (Visible on lg+) -->
+<aside class="hidden lg:flex flex-col h-screen w-64 fixed left-0 top-0 border-r border-outline-variant bg-white dark:bg-surface-container-lowest z-50">
+<!-- Header -->
+<div class="p-6 border-b border-outline-variant flex items-center gap-3">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined icon-filled">policy</span>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-extrabold text-primary dark:text-on-surface">Compliance Portal</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Regulatory Trade Data</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto py-4">
+<nav class="flex flex-col gap-1 px-2">
+<!-- Active Item -->
+<a class="flex items-center gap-4 bg-surface-container dark:bg-primary-container text-on-surface dark:text-on-primary-container border-r-4 border-primary px-4 py-3 rounded-lg hover:bg-surface-container-low dark:hover:bg-surface-container transition-all cursor-pointer duration-150 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">search</span>
+                    Search
+                </a>
+<!-- Inactive Item -->
+<a class="flex items-center gap-4 text-on-surface-variant dark:text-surface-variant px-4 py-3 rounded-lg hover:bg-surface-container-low dark:hover:bg-surface-container transition-all cursor-pointer duration-150 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">star</span>
+                    Favorites
+                </a>
+</nav>
+</div>
+<!-- Footer Actions -->
+<div class="p-4 border-t border-outline-variant">
+<button class="w-full bg-primary-container text-on-primary-container font-label-md text-label-md py-3 rounded-lg mb-4 hover:bg-primary transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Search
+            </button>
+<nav class="flex flex-col gap-1 px-2">
+<a class="flex items-center gap-4 text-on-surface-variant dark:text-surface-variant px-4 py-2 rounded-lg hover:bg-surface-container-low transition-all cursor-pointer font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined text-xl">settings</span>
+                    Settings
+                </a>
+<a class="flex items-center gap-4 text-on-surface-variant dark:text-surface-variant px-4 py-2 rounded-lg hover:bg-surface-container-low transition-all cursor-pointer font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined text-xl">help</span>
+                    Support
+                </a>
+</nav>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col h-screen overflow-y-auto w-full lg:ml-64 mt-16 lg:mt-0 bg-background relative">
+<!-- Decorative subtle background pattern -->
+<div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: radial-gradient(#001e40 1px, transparent 1px); background-size: 24px 24px;"></div>
+<div class="flex-1 w-full max-w-container-max mx-auto px-margin-mobile lg:px-margin-desktop py-12 lg:py-24 flex flex-col items-center justify-center relative z-10">
+<!-- Contextual Header -->
+<div class="text-center mb-10 max-w-2xl">
+<div class="inline-flex items-center justify-center w-16 h-16 bg-primary-fixed rounded-2xl mb-6 shadow-sm border border-primary-fixed-dim">
+<span class="material-symbols-outlined text-primary text-3xl">manage_search</span>
+</div>
+<h2 class="font-headline-lg-mobile lg:font-headline-lg text-headline-lg-mobile lg:text-headline-lg text-on-background mb-4">Classificação Fiscal de Mercadorias</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Insira o código NCM, a descrição técnica do produto ou utilize a inteligência artificial para análise por imagem estruturada.</p>
+</div>
+<!-- Primary Search Component -->
+<div class="w-full max-w-3xl bg-surface-container-lowest border border-outline-variant rounded-xl p-2 flex flex-col md:flex-row items-center gap-2 shadow-sm focus-within:border-primary transition-colors relative">
+<!-- Search Input Area -->
+<div class="flex-1 flex items-center w-full bg-surface-bright rounded-lg px-4 py-2">
+<span class="material-symbols-outlined text-on-surface-variant mr-3">search</span>
+<input autocomplete="off" class="w-full bg-transparent border-none outline-none font-body-lg text-body-lg text-on-surface placeholder:text-on-surface-variant focus:ring-0 p-0 h-12" placeholder="Código ou descrição do produto..." type="text"/>
+</div>
+<!-- Action Controls -->
+<div class="flex items-center gap-2 w-full md:w-auto px-2 md:px-0">
+<div class="h-8 w-px bg-outline-variant hidden md:block mx-1"></div>
+<!-- Image Search Feature -->
+<button class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-primary hover:bg-primary-fixed transition-colors border border-transparent hover:border-primary-fixed-dim group" title="Pesquisa por Imagem">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">document_scanner</span>
+<span class="font-label-md text-label-md md:hidden">Por Imagem</span>
+</button>
+<!-- Submit Search -->
+<button class="flex-1 md:flex-none bg-primary text-on-primary font-label-md text-label-md px-8 py-3 rounded-lg hover:bg-primary-container transition-colors shadow-sm whitespace-nowrap">
+                        Buscar
+                    </button>
+</div>
+</div>
+<!-- Quick Suggestions (Bento-style layout) -->
+<div class="w-full max-w-3xl mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Recent Searches -->
+<div class="col-span-1 md:col-span-2 bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
+<h3 class="font-label-md text-label-md text-on-surface-variant mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">history</span>
+                        Pesquisas Recentes
+                    </h3>
+<div class="flex flex-col gap-3">
+<a class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors border border-transparent hover:border-outline-variant group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">description</span>
+<span class="font-body-md text-body-md text-on-surface">Motores elétricos de corrente contínua</span>
+</div>
+<span class="font-code-ncm text-code-ncm text-primary">8501.10.29</span>
+</a>
+<a class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors border border-transparent hover:border-outline-variant group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">description</span>
+<span class="font-body-md text-body-md text-on-surface">Circuitos integrados monolíticos</span>
+</div>
+<span class="font-code-ncm text-code-ncm text-primary">8542.31.90</span>
+</a>
+</div>
+</div>
+<!-- Intelligent Upload Promo -->
+<div class="col-span-1 bg-surface-tint border border-outline-variant rounded-xl p-6 flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:shadow-md transition-shadow">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
+<div class="relative z-10">
+<div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center text-white mb-4 backdrop-blur-sm">
+<span class="material-symbols-outlined">auto_awesome</span>
+</div>
+<h3 class="font-label-md text-label-md text-white mb-2">Classificação IA</h3>
+<p class="font-body-sm text-body-sm text-white/80">Faça o upload do datasheet ou foto do produto para sugestão automática de NCM.</p>
+</div>
+<div class="relative z-10 mt-6 flex items-center text-white font-label-md text-label-md gap-1">
+                        Experimentar <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

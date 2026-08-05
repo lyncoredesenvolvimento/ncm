@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CNM Lyncore - Busca</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary-fixed-variant": "#474746",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "surface-bright": "#f8f9fa",
+                        "inverse-surface": "#2e3132",
+                        "tertiary-fixed-dim": "#c4c7ca",
+                        "on-secondary": "#ffffff",
+                        "background": "#f8f9fa",
+                        "surface-container-low": "#f3f4f5",
+                        "inverse-primary": "#a7c8ff",
+                        "on-tertiary-container": "#999ca0",
+                        "on-surface": "#191c1d",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-background": "#191c1d",
+                        "on-tertiary": "#ffffff",
+                        "tertiary": "#1b1f22",
+                        "surface-container-highest": "#e1e3e4",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#313437",
+                        "surface-dim": "#d9dadb",
+                        "on-primary-container": "#799dd6",
+                        "surface-container": "#edeeef",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "primary": "#001e40",
+                        "on-tertiary-fixed": "#191c1f",
+                        "surface-container-high": "#e7e8e9",
+                        "on-surface-variant": "#43474f",
+                        "primary-container": "#003366",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "surface": "#f8f9fa",
+                        "tertiary-fixed": "#e0e2e6",
+                        "on-primary": "#ffffff",
+                        "on-secondary-container": "#636262",
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "primary-fixed": "#d5e3ff",
+                        "surface-variant": "#e1e3e4",
+                        "surface-tint": "#3a5f94",
+                        "on-primary-fixed": "#001b3c",
+                        "secondary": "#5f5e5e",
+                        "outline": "#737780",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "secondary-fixed": "#e5e2e1",
+                        "on-tertiary-fixed-variant": "#44474a",
+                        "secondary-container": "#e2dfde",
+                        "outline-variant": "#c3c6d1"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    spacing: {
+                        "container-max": "1280px",
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "margin-desktop": "40px"
+                    },
+                    fontFamily: {
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "code-ncm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "body-sm": ["Inter"]
+                    },
+                    fontSize: {
+                        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+                        "label-md": ["14px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600" }],
+                        "headline-lg-mobile": ["26px", { lineHeight: "32px", fontWeight: "700" }],
+                        "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "code-ncm": ["16px", { lineHeight: "24px", letterSpacing: "0.1em", fontWeight: "700" }],
+                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "headline-md": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }],
+                        "headline-sm": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                        "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Hide scrollbar for clean look in lists */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col md:hidden">
+<!-- Header (Mobile Context) -->
+<header class="h-16 flex items-center justify-between px-margin-mobile border-b border-outline-variant bg-surface-container-lowest sticky top-0 z-10">
+<button aria-label="Voltar" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-on-surface">arrow_back</span>
+</button>
+<h1 class="font-headline-sm text-headline-sm text-primary font-bold">NCM Lyncore</h1>
+<div class="w-10 h-10 flex items-center justify-center">
+<!-- Placeholder for balance to keep title centered -->
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col">
+<!-- Search Area (Sticky slightly below header for quick access) -->
+<section class="p-margin-mobile bg-surface-container-lowest border-b border-outline-variant shadow-sm z-0">
+<label class="font-label-md text-label-md text-on-surface-variant block mb-2" for="ncm-search">Buscar NCM ou Descrição</label>
+<div class="relative flex items-center w-full">
+<!-- Search Icon -->
+<span class="material-symbols-outlined absolute left-3 text-outline">search</span>
+<!-- Input Field -->
+<input class="w-full h-[48px] pl-10 pr-[100px] border border-outline-variant rounded bg-surface-container-lowest text-on-surface font-body-md placeholder:text-outline focus:outline-none focus:border-primary-container focus:border-2 transition-all" id="ncm-search" placeholder="Ex: 8517.12.31 ou Smartphone..." type="text"/>
+<!-- AI Visual Recognition Button (Camera) -->
+<div class="absolute right-1 flex items-center gap-1">
+<div class="h-8 w-px bg-outline-variant mx-1"></div>
+<button aria-label="Busca Visual por IA" class="h-[40px] px-3 flex items-center justify-center gap-2 bg-surface-container-low text-primary-container rounded hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined filled text-[20px]">photo_camera</span>
+<span class="font-label-md text-label-md hidden sm:block">IA</span>
+</button>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">
+                Utilize a câmera para identificar produtos automaticamente.
+            </p>
+</section>
+<!-- Recent Searches (Pesquisas Recentes) - Card Layout -->
+<section class="flex-1 p-margin-mobile bg-background mt-2">
+<div class="flex items-center justify-between mb-4">
+<h2 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Pesquisas Recentes</h2>
+<button class="font-label-md text-label-md text-primary hover:underline">Limpar</button>
+</div>
+<!-- Staggered Card Grid for Recent Items (Moving away from standard lists) -->
+<div class="grid grid-cols-1 gap-3">
+<!-- Card 1 -->
+<a class="block bg-surface-container-lowest border border-outline-variant rounded p-4 relative overflow-hidden group active:bg-surface-container-low transition-colors" href="#">
+<!-- Subtle accent edge -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-surface-tint opacity-50"></div>
+<div class="flex justify-between items-start mb-1 pl-2">
+<span class="font-code-ncm text-code-ncm text-primary">8517.12.31</span>
+<span class="material-symbols-outlined text-outline text-[18px]">history</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface pl-2 line-clamp-2">
+                        Telefones inteligentes (smartphones) para redes celulares.
+                    </p>
+<div class="mt-3 pl-2 flex gap-2">
+<span class="px-2 py-0.5 bg-surface-container-low text-on-surface-variant font-label-md text-[10px] rounded border border-outline-variant">Capítulo 85</span>
+</div>
+</a>
+<!-- Card 2 -->
+<a class="block bg-surface-container-lowest border border-outline-variant rounded p-4 relative overflow-hidden group active:bg-surface-container-low transition-colors" href="#">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-surface-tint opacity-50"></div>
+<div class="flex justify-between items-start mb-1 pl-2">
+<span class="font-code-ncm text-code-ncm text-primary">8471.30.12</span>
+<span class="material-symbols-outlined text-outline text-[18px]">history</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface pl-2 line-clamp-2">
+                        Máquinas automáticas para processamento de dados, portáteis (Notebooks).
+                    </p>
+<div class="mt-3 pl-2 flex gap-2">
+<span class="px-2 py-0.5 bg-surface-container-low text-on-surface-variant font-label-md text-[10px] rounded border border-outline-variant">Capítulo 84</span>
+</div>
+</a>
+<!-- Card 3 (Text Search Type) -->
+<a class="block bg-surface-container-lowest border border-outline-variant rounded p-4 relative overflow-hidden group active:bg-surface-container-low transition-colors" href="#">
+<div class="flex justify-between items-start mb-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[18px]">search</span>
+<span class="font-headline-sm text-headline-sm text-on-surface text-[16px]">Fones de ouvido bluetooth</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                        Termo pesquisado em descrições.
+                    </p>
+</a>
+<!-- Card 4 (Visual Search History) -->
+<a class="block bg-surface-container-lowest border border-outline-variant rounded p-4 relative overflow-hidden group active:bg-surface-container-low transition-colors" href="#">
+<div class="flex justify-between items-start mb-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container text-[18px]">photo_camera</span>
+<span class="font-headline-sm text-headline-sm text-on-surface text-[16px]">Busca Visual (Placa Mãe)</span>
+</div>
+<span class="font-label-md text-label-md text-outline text-[10px]">Ontem</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                        Identificado como Capítulo 84, subposição pendente.
+                    </p>
+</a>
+</div>
+</section>
+</main>
+</body></html>

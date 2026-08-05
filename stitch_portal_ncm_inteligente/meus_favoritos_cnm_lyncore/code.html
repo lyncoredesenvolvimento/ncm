@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+
+<html lang="pt"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Favoritos - NCM Compliant</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed-variant": "#474746",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "surface-bright": "#f8f9fa",
+                        "inverse-surface": "#2e3132",
+                        "tertiary-fixed-dim": "#c4c7ca",
+                        "on-secondary": "#ffffff",
+                        "background": "#f8f9fa",
+                        "surface-container-low": "#f3f4f5",
+                        "inverse-primary": "#a7c8ff",
+                        "on-tertiary-container": "#999ca0",
+                        "on-surface": "#191c1d",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-background": "#191c1d",
+                        "on-tertiary": "#ffffff",
+                        "tertiary": "#1b1f22",
+                        "surface-container-highest": "#e1e3e4",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#313437",
+                        "surface-dim": "#d9dadb",
+                        "on-primary-container": "#799dd6",
+                        "surface-container": "#edeeef",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "primary": "#001e40",
+                        "on-tertiary-fixed": "#191c1f",
+                        "surface-container-high": "#e7e8e9",
+                        "on-surface-variant": "#43474f",
+                        "primary-container": "#003366",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "surface": "#f8f9fa",
+                        "tertiary-fixed": "#e0e2e6",
+                        "on-primary": "#ffffff",
+                        "on-secondary-container": "#636262",
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "primary-fixed": "#d5e3ff",
+                        "surface-variant": "#e1e3e4",
+                        "surface-tint": "#3a5f94",
+                        "on-primary-fixed": "#001b3c",
+                        "secondary": "#5f5e5e",
+                        "outline": "#737780",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "secondary-fixed": "#e5e2e1",
+                        "on-tertiary-fixed-variant": "#44474a",
+                        "secondary-container": "#e2dfde",
+                        "outline-variant": "#c3c6d1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "container-max": "1280px",
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "margin-desktop": "40px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "code-ncm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["26px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "code-ncm": ["16px", { "lineHeight": "24px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Hide scrollbar for clean mobile look */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col md:flex-row antialiased">
+<!-- Desktop Side Nav Bar (Hidden on Mobile) -->
+<nav class="hidden lg:flex flex-col h-full border-r border-outline-variant bg-white dark:bg-surface-container-lowest h-screen w-64 fixed left-0 top-0 z-50">
+<div class="p-6 border-b border-outline-variant">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined">policy</span>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-extrabold text-primary dark:text-on-surface">Compliance Portal</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Regulatory Trade Data</p>
+</div>
+</div>
+<button class="mt-6 w-full bg-primary-container text-on-primary py-2 px-4 rounded font-label-md text-label-md uppercase hover:bg-primary transition-colors">
+                New Search
+            </button>
+</div>
+<div class="flex-1 py-4 flex flex-col gap-1">
+<a class="flex items-center gap-4 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-low dark:hover:bg-surface-container transition-all cursor-pointer duration-150 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+                Search
+            </a>
+<a class="flex items-center gap-4 bg-surface-container dark:bg-primary-container text-on-surface dark:text-on-primary-container border-r-4 border-primary px-4 py-3 hover:bg-surface-container-low dark:hover:bg-surface-container transition-all cursor-pointer duration-150 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined icon-fill" data-icon="star" data-weight="fill">star</span>
+                Favorites
+            </a>
+</div>
+<div class="mt-auto border-t border-outline-variant p-4 flex flex-col gap-1">
+<a class="flex items-center gap-4 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-low transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                Settings
+            </a>
+<a class="flex items-center gap-4 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-low transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+                Support
+            </a>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 flex flex-col w-full lg:ml-64">
+<!-- TopNavBar (Mobile Header Context) -->
+<header class="bg-surface dark:bg-surface-container-highest docked full-width top-0 border-b border-outline-variant flat no-shadows flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-16 max-w-container-max mx-auto z-40 sticky">
+<!-- Mobile Menu Icon -->
+<button class="lg:hidden text-on-surface-variant p-2 -ml-2">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-on-surface lg:hidden">
+                NCM Lyncore</div>
+<div class="hidden lg:block font-headline-md text-headline-md font-bold text-primary dark:text-on-surface invisible">
+                NCM Compliant <!-- Spacer for desktop -->
+</div>
+<div class="flex items-center gap-4 text-primary dark:text-inverse-primary">
+<span class="material-symbols-outlined cursor-pointer hover:opacity-80 transition-opacity" data-icon="logout">logout</span>
+</div>
+</header>
+<!-- Main Canvas for Favorites (Mobile Optimized) -->
+<main class="flex-1 p-margin-mobile md:p-margin-desktop md:pt-gutter bg-background">
+<div class="mb-gutter max-w-3xl mx-auto">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-2">Meus Favoritos</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Códigos NCM salvos para acesso rápido e monitoramento de conformidade.</p>
+</div>
+<!-- Search/Filter Bar -->
+<div class="max-w-3xl mx-auto mb-gutter">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-outline">search</span>
+<input class="w-full pl-10 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded focus:border-primary-container focus:ring-1 focus:ring-primary-container font-body-md text-body-md text-on-surface transition-colors outline-none placeholder:text-on-surface-variant" placeholder="Filtrar favoritos por código ou descrição..." type="text"/>
+</div>
+</div>
+<!-- List of Saved NCM Codes -->
+<div class="flex flex-col gap-4 max-w-3xl mx-auto">
+<!-- NCM Item Card 1 -->
+<article class="bg-surface-container-lowest border border-outline-variant rounded p-4 flex flex-col gap-3 hover:bg-surface-bright transition-colors">
+<!-- Hierarchy Breadcrumbs -->
+<div class="flex items-center flex-wrap gap-1 font-body-sm text-body-sm text-on-surface-variant">
+<span class="">Seção XVI</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="">Capítulo 85</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="font-semibold">Posição 8517</span>
+</div>
+<div class="flex justify-between items-start gap-4">
+<div>
+<h3 class="font-code-ncm text-code-ncm text-primary-container mb-1">NCM 8517.13.00</h3>
+<p class="font-body-md text-body-md text-on-surface line-clamp-2 leading-tight">
+                                Telefones inteligentes (smartphones). Aparelhos telefônicos para redes celulares ou para outras redes sem fio.
+                            </p>
+</div>
+<button class="text-primary-container hover:bg-surface-container-low p-2 rounded-full transition-colors flex-shrink-0 -mt-1 -mr-1">
+<span class="material-symbols-outlined icon-fill">star</span>
+</button>
+</div>
+<!-- Metadata / Tags -->
+<div class="flex gap-2 mt-1">
+<span class="bg-surface-container px-2 py-1 border border-outline-variant rounded text-on-surface-variant font-label-md text-[12px] uppercase tracking-wider">
+                            II: 15%
+                        </span>
+<span class="bg-surface-container px-2 py-1 border border-outline-variant rounded text-on-surface-variant font-label-md text-[12px] uppercase tracking-wider">
+                            IPI: 10%
+                        </span>
+</div>
+</article>
+<!-- NCM Item Card 2 -->
+<article class="bg-surface-container-lowest border border-outline-variant rounded p-4 flex flex-col gap-3 hover:bg-surface-bright transition-colors">
+<div class="flex items-center flex-wrap gap-1 font-body-sm text-body-sm text-on-surface-variant">
+<span class="">Seção XVI</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="">Capítulo 84</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="font-semibold">Posição 8471</span>
+</div>
+<div class="flex justify-between items-start gap-4">
+<div>
+<h3 class="font-code-ncm text-code-ncm text-primary-container mb-1">NCM 8471.30.11</h3>
+<p class="font-body-md text-body-md text-on-surface line-clamp-2 leading-tight">
+                                Máquinas automáticas para processamento de dados, portáteis, de peso não superior a 10 kg, contendo pelo menos uma unidade central de processamento.
+                            </p>
+</div>
+<button class="text-primary-container hover:bg-surface-container-low p-2 rounded-full transition-colors flex-shrink-0 -mt-1 -mr-1">
+<span class="material-symbols-outlined icon-fill">star</span>
+</button>
+</div>
+<div class="flex gap-2 mt-1">
+<span class="bg-surface-container px-2 py-1 border border-outline-variant rounded text-on-surface-variant font-label-md text-[12px] uppercase tracking-wider">
+                            II: 0%
+                        </span>
+<span class="bg-error-container text-on-error-container border border-error/20 px-2 py-1 rounded font-label-md text-[12px] uppercase tracking-wider">
+                            Alerta Ex-Tarifário
+                        </span>
+</div>
+</article>
+<!-- NCM Item Card 3 -->
+<article class="bg-surface-container-lowest border border-outline-variant rounded p-4 flex flex-col gap-3 hover:bg-surface-bright transition-colors">
+<div class="flex items-center flex-wrap gap-1 font-body-sm text-body-sm text-on-surface-variant">
+<span class="">Seção XVII</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="">Capítulo 87</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="font-semibold">Posição 8703</span>
+</div>
+<div class="flex justify-between items-start gap-4">
+<div>
+<h3 class="font-code-ncm text-code-ncm text-primary-container mb-1">NCM 8703.22.10</h3>
+<p class="font-body-md text-body-md text-on-surface line-clamp-2 leading-tight">
+                                Automóveis de passageiros e outros veículos automóveis principalmente concebidos para transporte de pessoas, com motor de pistão de cilindrada superior a 1.000 cm3 mas não superior a 1.500 cm3.
+                            </p>
+</div>
+<button class="text-primary-container hover:bg-surface-container-low p-2 rounded-full transition-colors flex-shrink-0 -mt-1 -mr-1">
+<span class="material-symbols-outlined icon-fill">star</span>
+</button>
+</div>
+<div class="flex gap-2 mt-1">
+<span class="bg-surface-container px-2 py-1 border border-outline-variant rounded text-on-surface-variant font-label-md text-[12px] uppercase tracking-wider">
+                            II: 35%
+                        </span>
+</div>
+</article>
+</div>
+</main>
+</div>
+</body></html>
