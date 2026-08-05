@@ -31,12 +31,16 @@ function SearchContent() {
   // Carregar dados do usuário e iniciar busca
   useEffect(() => {
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (!user || userError) {
         router.push("/");
         return;
       }
       setUserId(user.id);
+
+      // Obter o token de acesso atual para enviar na API
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token || "";
 
       // Iniciar classificação inicial (Passo 1)
       try {
@@ -54,7 +58,8 @@ function SearchContent() {
         const res = await fetch("/api/classify", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`
           },
           body: JSON.stringify({
             step: 1,
@@ -91,10 +96,15 @@ function SearchContent() {
       setLoading(true);
       setError(null);
 
+      // Obter o token atualizado antes de cada chamada
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token || "";
+
       const res = await fetch("/api/classify", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           step: 2,
