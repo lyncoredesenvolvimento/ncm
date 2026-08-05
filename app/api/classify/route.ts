@@ -7,7 +7,6 @@ const groqApiKey = process.env.GROQ_API_KEY;
 
 // Função auxiliar para buscar candidatos NCM na base local do Supabase
 async function searchNcmCandidates(queryText: string) {
-  // Limpar a busca e extrair palavras significativas com mais de 2 letras
   const words = queryText
     .toLowerCase()
     .replace(/[^\w\s]/g, "")
@@ -19,17 +18,31 @@ async function searchNcmCandidates(queryText: string) {
     .select("code, description, full_description, chapter");
 
   if (words.length > 0) {
-    // Busca flexível: onde a descrição contenha qualquer uma das palavras principais do termo pesquisado
-    const orConditions = words.map(w => `description.ilike.%${w}%`).join(",");
-    dbQuery = dbQuery.or(orConditions);
+    // Aplica múltiplos filtros .ilike() consecutivos para criar uma condição AND estrita
+    words.forEach(w => {
+      dbQuery = dbQuery.ilike("description", `%${w}%`);
+    });
   } else {
-    // Fallback para busca por correspondência simples
     dbQuery = dbQuery.ilike("description", `%${queryText}%`);
   }
 
-  // Trazer os primeiros 15 candidatos mais relevantes
-  const { data, error } = await dbQuery.limit(15);
+  let { data, error } = await dbQuery.limit(15);
   if (error) throw error;
+
+  // FALLBACK: Se a busca estrita com todas as palavras combinadas não trouxer nada,
+  // fazemos uma nova busca focando exclusivamente na PRIMEIRA palavra (que é o objeto principal, ex: "caneta")
+  if ((!data || data.length === 0) && words.length > 1) {
+    const fallbackQuery = supabaseAdmin
+      .from("ncms")
+      .select("code, description, full_description, chapter")
+      .ilike("description", `%${words[0]}%`)
+      .limit(15);
+    
+    const fallbackResult = await fallbackQuery;
+    if (fallbackResult.error) throw fallbackResult.error;
+    data = fallbackResult.data;
+  }
+
   return data || [];
 }
 
