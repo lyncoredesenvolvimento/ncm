@@ -72,7 +72,10 @@ export default function LoginPage() {
         setMode("login");
       }
     } catch (err: any) {
-      setMessage({ text: err.message || "Ocorreu um erro, tente novamente.", type: "error" });
+      const msg = err.message || JSON.stringify(err) || "Erro desconhecido";
+      alert("ERRO DE LOGIN (debug): " + msg);
+      setMessage({ text: msg, type: "error" });
+
     } finally {
       setLoading(false);
     }
