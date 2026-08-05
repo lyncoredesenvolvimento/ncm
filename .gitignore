@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ncm data and spreadsheet files
+ncmplanilha/
+Tabela_NCM_Vigente_20260804.xlsx
+*.xlsx
