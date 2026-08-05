@@ -1,25 +1,38 @@
 import { createClient } from "@supabase/supabase-js";
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Cliente PÚBLICO — usado em Client Components ("use client")
-// As variáveis NEXT_PUBLIC_* são expostas ao browser intencionalmente.
-// ──────────────────────────────────────────────────────────────────────────────
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Variáveis públicas — disponíveis no browser (prefixo NEXT_PUBLIC_ obrigatório)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Variável secreta — disponível APENAS no servidor (API Routes)
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Cliente ADMIN — usado APENAS em Server Components e API Routes (servidor)
-// NUNCA expor SUPABASE_SERVICE_ROLE_KEY ao browser.
-// ──────────────────────────────────────────────────────────────────────────────
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Cliente público (usado em Client Components e páginas)
+export const supabase = createClient(
+  supabaseUrl || "https://placeholder.supabase.co",
+  supabaseAnonKey || "placeholder-anon-key"
+);
 
+// Cliente admin (usado APENAS em API Routes no servidor — NUNCA expor ao browser)
 export const supabaseAdmin = supabaseServiceKey
-  ? createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    })
+  ? createClient(
+      supabaseUrl || "https://placeholder.supabase.co",
+      supabaseServiceKey,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      }
+    )
   : supabase;
+
+// Retorna true se o cliente está corretamente configurado com variáveis reais
+export function isSupabaseConfigured(): boolean {
+  return Boolean(
+    supabaseUrl &&
+      supabaseUrl !== "https://placeholder.supabase.co" &&
+      supabaseAnonKey &&
+      supabaseAnonKey !== "placeholder-anon-key"
+  );
+}

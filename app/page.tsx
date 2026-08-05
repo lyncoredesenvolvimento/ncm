@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,6 +33,16 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
+
+    // Verificar se o Supabase está configurado com variáveis de ambiente reais
+    if (!isSupabaseConfigured()) {
+      setMessage({
+        text: "Erro de configuração: As variáveis de ambiente do Supabase (NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY) não estão configuradas no servidor. Por favor, adicione-as nas configurações de ambiente da Vercel.",
+        type: "error"
+      });
+      setLoading(false);
+      return;
+    }
 
     try {
       if (mode === "login") {
