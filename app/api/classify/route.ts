@@ -1,26 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
+import Groq from "groq-sdk";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
 import { writeLog, writeErrorLog } from "@/lib/security";
 
-const apiKey = process.env.GEMINI_API_KEY;
+const groqApiKey = process.env.GROQ_API_KEY;
 
 export async function POST(request: NextRequest) {
   let activeUser: any = null;
-  
+
   try {
     const body = await request.json();
     const { query, imageBase64, previousQuestions, answers, step } = body;
 
-    if (!apiKey || apiKey === "INSIRA_SUA_CHAVE_GEMINI_AQUI") {
+    if (!groqApiKey) {
       return NextResponse.json(
-        { error: "A chave da API do Gemini (GEMINI_API_KEY) não está configurada no servidor." },
+        { error: "A chave da API do Groq (GROQ_API_KEY) não está configurada no servidor." },
         { status: 500 }
       );
     }
 
-    // 1. Identificar o usuário no servidor via token ou cookies (Segurança)
-    // Ler token do cabeçalho Authorization
+    // 1. Identificar o usuário via Bearer token
     const authHeader = request.headers.get("authorization") ?? "";
     let token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
 
@@ -42,12 +41,9 @@ export async function POST(request: NextRequest) {
     // Validar token no Supabase Auth
     if (token) {
       const { data: { user } } = await supabase.auth.getUser(token);
-      if (user) {
-        activeUser = user;
-      }
+      if (user) activeUser = user;
     }
 
-    // Se for rota privada e não estiver logado
     if (!activeUser) {
       return NextResponse.json(
         { error: "Sessão inválida ou não autenticada." },
@@ -55,18 +51,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ai = new GoogleGenAI({ apiKey });
+    const groq = new Groq({ apiKey: groqApiKey });
 
-    // Se for o Passo 1 (Busca Inicial por Texto ou Imagem)
+    // ─── PASSO 1: Triagem Inicial (Texto ou Imagem) ───────────────────────────
     if (step === 1) {
-      let prompt = `Você é um especialista em classificação fiscal do Mercosul e análise de NCM (Nomenclatura Comum do Mercosul).
+      const systemPrompt = `Você é um especialista em classificação fiscal do Mercosul e análise de NCM (Nomenclatura Comum do Mercosul).
 Seu objetivo é analisar as informações do produto fornecidas e gerar perguntas inteligentes para refinamento e triagem dinâmica do NCM correto.
 
 Instruções:
-1. Identifique o tipo de produto e sua provável categoria.
+1. Identifique o tipo de produto e sua provável categoria NCM.
 2. Formule até 4 perguntas sequenciais e objetivas que ajudem a diferenciar as subposições do NCM deste produto.
 3. Para cada pergunta, forneça entre 2 a 5 opções de respostas claras e excludentes.
-4. Responda estritamente no formato JSON abaixo:
+4. Responda APENAS com JSON válido no formato abaixo, sem nenhum texto adicional:
 {
   "productDescription": "Nome/Descrição técnica do produto deduzida",
   "questions": [
@@ -78,63 +74,98 @@ Instruções:
   ]
 }`;
 
-      let contents: any[] = [{ text: prompt }];
+      let messages: any[];
 
       if (imageBase64) {
+        // Modo imagem — usar modelo de visão do Groq (Llama 3.2 Vision)
         const match = imageBase64.match(/^data:(image\/\w+);base64,(.+)$/);
         if (!match) {
           return NextResponse.json({ error: "Formato de imagem inválido." }, { status: 400 });
         }
-        const mimeType = match[1];
-        const data = match[2];
 
-        contents.push({
-          inlineData: {
-            mimeType,
-            data
+        messages = [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: systemPrompt + "\n\nAnalise a imagem do produto abaixo e identifique o produto para classificação NCM."
+              },
+              {
+                type: "image_url",
+                image_url: { url: imageBase64 }
+              }
+            ]
           }
+        ];
+
+        const completion = await groq.chat.completions.create({
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          messages,
+          response_format: { type: "json_object" },
+          max_tokens: 1024,
         });
-        contents[0].text += "\nAnalise a imagem do produto anexado e use-a como contexto principal.";
+
+        const resultText = completion.choices[0]?.message?.content;
+        if (!resultText) throw new Error("Resposta vazia da API Groq (imagem).");
+        const result = JSON.parse(resultText);
+
+        try {
+          await writeLog({
+            user_id: activeUser.id,
+            user_name: activeUser.user_metadata?.name || activeUser.email?.split("@")[0] || "Usuário",
+            user_email: activeUser.email,
+            action: "search",
+            entity: "Image Upload",
+            module_name: "Classificação NCM (Triagem)",
+            description: `Busca por imagem iniciada. Produto identificado: "${result.productDescription}".`
+          });
+        } catch (logErr) {
+          console.warn("[writeLog] Falha ao registrar log (não crítico):", logErr);
+        }
+
+        return NextResponse.json(result);
+
       } else if (query) {
-        contents[0].text += `\nO produto informado pelo usuário é: "${query}"`;
+        // Modo texto
+        messages = [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `O produto informado pelo usuário é: "${query}"` }
+        ];
+
+        const completion = await groq.chat.completions.create({
+          model: "llama-3.3-70b-versatile",
+          messages,
+          response_format: { type: "json_object" },
+          max_tokens: 1024,
+        });
+
+        const resultText = completion.choices[0]?.message?.content;
+        if (!resultText) throw new Error("Resposta vazia da API Groq (texto).");
+        const result = JSON.parse(resultText);
+
+        try {
+          await writeLog({
+            user_id: activeUser.id,
+            user_name: activeUser.user_metadata?.name || activeUser.email?.split("@")[0] || "Usuário",
+            user_email: activeUser.email,
+            action: "search",
+            entity: query,
+            module_name: "Classificação NCM (Triagem)",
+            description: `Busca por texto '${query}' iniciada. Produto identificado: "${result.productDescription}".`
+          });
+        } catch (logErr) {
+          console.warn("[writeLog] Falha ao registrar log (não crítico):", logErr);
+        }
+
+        return NextResponse.json(result);
+
       } else {
         return NextResponse.json({ error: "Descrição do produto ou imagem é necessária." }, { status: 400 });
       }
-
-      const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents,
-        config: {
-          responseMimeType: "application/json",
-        }
-      });
-
-      const resultText = response.text;
-      if (!resultText) {
-        throw new Error("Resposta vazia da API do Gemini.");
-      }
-
-      const result = JSON.parse(resultText);
-      
-      // Registrar log — isolado para não quebrar o fluxo principal
-      try {
-        await writeLog({
-          user_id: activeUser.id,
-          user_name: activeUser.user_metadata?.name || activeUser.email?.split("@")[0] || "Usuário",
-          user_email: activeUser.email,
-          action: "search",
-          entity: imageBase64 ? "Image Upload" : query,
-          module_name: "Classificação NCM (Triagem)",
-          description: `Busca iniciada por ${imageBase64 ? "Imagem" : "Texto ('" + query + "')"}. Descrição identificada pela IA: "${result.productDescription}".`
-        });
-      } catch (logErr) {
-        console.warn("[writeLog] Falha ao registrar log (não crítico):", logErr);
-      }
-
-      return NextResponse.json(result);
     }
 
-    // Se for o Passo 2 (Processar as Respostas do usuário e chegar ao NCM final)
+    // ─── PASSO 2: Resultado Final (NCM + Justificativa + Alíquotas) ──────────
     if (step === 2) {
       if (!answers || !previousQuestions) {
         return NextResponse.json({ error: "Perguntas anteriores e respostas são necessárias." }, { status: 400 });
@@ -147,23 +178,17 @@ Instruções:
         })
         .join("\n");
 
-      let prompt = `Você é um especialista em classificação fiscal do Mercosul e análise de NCM (Nomenclatura Comum do Mercosul).
-Com base nas informações do produto e nas respostas de triagem respondidas pelo usuário, determine o código NCM correto de 8 dígitos.
-
-Dados do Produto:
-${query ? `Descrição inicial: "${query}"` : "Produto enviado por imagem."}
-
-Respostas fornecidas na triagem:
-${answersSummary}
+      const systemPrompt = `Você é um especialista em classificação fiscal do Mercosul e análise de NCM.
+Com base nas informações do produto e nas respostas de triagem, determine o código NCM correto de 8 dígitos.
 
 Instruções:
-1. Determine o código NCM de 8 dígitos correto para o produto. O código deve ser composto estritamente por 8 caracteres numéricos (ex: "84713012" ou "85176259", sem pontos).
-2. Forneça uma justificativa técnica da classificação fiscal com base nas Regras Gerais de Interpretação do Sistema Harmonizado (RGI).
-3. Estime as alíquotas nacionais de impostos (IPI, PIS, COFINS) aplicáveis.
-4. Responda estritamente no formato JSON abaixo:
+1. Determine o código NCM de 8 dígitos (ex: "84713012", sem pontos).
+2. Forneça justificativa técnica com base nas Regras Gerais de Interpretação do SH (RGI).
+3. Estime alíquotas nacionais de IPI, PIS, COFINS.
+4. Responda APENAS com JSON válido, sem texto adicional:
 {
   "ncmCode": "8DIGITOS",
-  "justification": "Sua justificativa detalhada e técnica aqui...",
+  "justification": "Justificativa detalhada e técnica aqui...",
   "taxes": {
     "ipi": "Alíquota % ou Isento",
     "pis": "Alíquota %",
@@ -171,30 +196,35 @@ Instruções:
   }
 }`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents: [{ text: prompt }],
-        config: {
-          responseMimeType: "application/json",
-        }
+      const userContent = `Dados do Produto:
+${query ? `Descrição inicial: "${query}"` : "Produto enviado por imagem."}
+
+Respostas fornecidas na triagem:
+${answersSummary}`;
+
+      const completion = await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userContent }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 1024,
       });
 
-      const resultText = response.text;
-      if (!resultText) {
-        throw new Error("Resposta vazia da API do Gemini.");
-      }
+      const resultText = completion.choices[0]?.message?.content;
+      if (!resultText) throw new Error("Resposta vazia da API Groq (resultado final).");
 
       const result = JSON.parse(resultText);
       const cleanCode = String(result.ncmCode).replace(/[^0-9]/g, "");
 
-      // Buscar a descrição oficial do NCM no nosso banco de dados do Supabase
+      // Buscar descrição oficial do NCM no banco Supabase
       const { data: ncmData } = await supabaseAdmin
         .from("ncms")
         .select("code, description, full_description")
         .eq("code", cleanCode)
         .single();
 
-      // Registrar log — isolado para não quebrar o fluxo principal
       try {
         await writeLog({
           user_id: activeUser.id,
@@ -203,7 +233,7 @@ Instruções:
           action: "search",
           entity: cleanCode,
           module_name: "Classificação NCM (Resultado)",
-          description: `Classificação concluída. NCM gerado: ${cleanCode}. Alíquotas estimadas - IPI: ${result.taxes?.ipi || "0%"}, PIS: ${result.taxes?.pis || "0%"}, COFINS: ${result.taxes?.cofins || "0%"}.`
+          description: `Classificação concluída. NCM: ${cleanCode}. IPI: ${result.taxes?.ipi || "0%"}, PIS: ${result.taxes?.pis || "0%"}, COFINS: ${result.taxes?.cofins || "0%"}.`
         });
       } catch (logErr) {
         console.warn("[writeLog] Falha ao registrar log (não crítico):", logErr);
@@ -222,8 +252,7 @@ Instruções:
 
   } catch (error: any) {
     console.error("Erro na API Route /api/classify:", error);
-    
-    // Gravar log de erro — isolado para não causar erro secundário
+
     try {
       await writeErrorLog({
         user_id: activeUser?.id || null,
@@ -238,7 +267,6 @@ Instruções:
       console.warn("[writeErrorLog] Falha ao registrar log de erro:", logErr);
     }
 
-    // Retornar mensagem de erro com detalhes para debug
     const errMsg = error?.message || String(error) || "Erro desconhecido";
     return NextResponse.json(
       { error: `Erro interno: ${errMsg}` },
