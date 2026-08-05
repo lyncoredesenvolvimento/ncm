@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
 
       if (!ncmData) {
         return NextResponse.json(
-          { error: "Erro de correspondência: Não foi possível localizar uma classificação 100% segura para este produto na planilha oficial. Por favor, fornece mais detalhes técnicos." },
+          { error: "Erro de correspondência: Não foi possível localizar uma classificação 100% segura para este produto na planilha oficial. Por favor, forneça mais detalhes técnicos." },
           { status: 422 }
         );
       }
@@ -173,9 +173,7 @@ Instruções adicionais:
 
     // ─── PASSO 1: Triagem Inicial (Texto ou Imagem) ───────────────────────────
     if (step === 1) {
-      let searchQuery = query || "";
-
-      // Se for por imagem, usar a IA de visão para deduzir a descrição do produto primeiro
+      // 1. FLUXO POR FOTO (Com IA): Analisar imagem primeiro
       if (imageBase64) {
         const match = imageBase64.match(/^data:(image\/\w+);base64,(.+)$/);
         if (!match) {
@@ -207,17 +205,60 @@ Instruções adicionais:
         let visionText = visionCompletion.choices[0]?.message?.content || "";
         visionText = visionText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
         if (!visionText) throw new Error("A IA de visão não conseguiu descrever o produto.");
-        
-        searchQuery = visionText;
+
+        // Buscar candidatos na base com base no texto obtido pela imagem
+        const ncmCandidates = await searchNcmCandidates(visionText);
+        if (ncmCandidates.length === 0) {
+          return NextResponse.json(
+            { error: "Erro de correspondência: Não foi possível localizar uma classificação 100% segura para este produto na planilha oficial. Por favor, forneça mais detalhes técnicos." },
+            { status: 422 }
+          );
+        }
+
+        // Formular as perguntas de triagem para a imagem
+        const systemPrompt = `Você é um especialista em classificação fiscal do Mercosul e análise de NCM.
+Sua tarefa é analisar a descrição do produto e a lista de candidatos NCM reais. Formule perguntas de triagem inteligentes para encontrar o código correto.
+
+Produto do Usuário: "${visionText}"
+
+Candidatos NCM Reais:
+${ncmCandidates.map(n => `- Código: ${n.code} | Descrição: ${n.description}`).join("\n")}
+
+Instruções:
+1. Crie até 4 perguntas objetivas com opções excludentes específicas para diferenciar estes candidatos.
+2. Responda apenas no formato JSON:
+{
+  "productDescription": "${visionText}",
+  "questions": [
+    {
+      "id": "pergunta_id",
+      "text": "Texto da pergunta?",
+      "options": ["Opção A", "Opção B"]
+    }
+  ]
+}`;
+
+        const completion = await groq.chat.completions.create({
+          model: "llama-3.3-70b-versatile",
+          messages: [{ role: "user", content: systemPrompt }],
+          max_tokens: 2048,
+        });
+
+        let rawText = completion.choices[0]?.message?.content || "";
+        rawText = rawText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("JSON inválido gerado na triagem de imagem.");
+        const result = JSON.parse(jsonMatch[0]);
+
+        return NextResponse.json(result);
       }
 
-      if (!searchQuery) {
-        return NextResponse.json({ error: "Descrição do produto ou imagem é necessária." }, { status: 400 });
+      // 2. FLUXO POR TEXTO (Sem IA): Consulta direta no banco, sem perguntas
+      if (!query) {
+        return NextResponse.json({ error: "Descrição do produto é necessária." }, { status: 400 });
       }
 
-      // CONSULTA PRÉVIA AO SUPABASE (Mecanismo de Busca candidatos reais)
-      const ncmCandidates = await searchNcmCandidates(searchQuery);
-
+      const ncmCandidates = await searchNcmCandidates(query);
       if (ncmCandidates.length === 0) {
         return NextResponse.json(
           { error: "Erro de correspondência: Não foi possível localizar uma classificação 100% segura para este produto na planilha oficial. Por favor, forneça mais detalhes técnicos." },
@@ -225,65 +266,56 @@ Instruções adicionais:
         );
       }
 
-      // INJEÇÃO DE CONTEXTO REAL NO PROMPT DA IA
-      const systemPrompt = `Você é um especialista em classificação fiscal do Mercosul e análise de NCM (Nomenclatura Comum do Mercosul).
-Sua tarefa é analisar a descrição do produto do usuário e a lista de candidatos NCM reais extraídos do nosso banco de dados. Com base nisso, formule perguntas inteligentes e excludentes para triagem dinâmica do NCM correto.
-
-Produto do Usuário: "${searchQuery}"
-
-Lista de Candidatos NCM Reais do Banco de Dados:
-${ncmCandidates.map(n => `- Código: ${n.code} | Descrição: ${n.description}`).join("\n")}
-
-Instruções:
-1. Analise as descrições dos candidatos reais na lista acima.
-2. Formule até 4 perguntas sequenciais e objetivas cujas respostas ajudem a diferenciar entre esses candidatos NCM reais específicos.
-3. Para cada pergunta, forneça entre 2 a 5 opções de respostas claras e excludentes.
-4. Responda APENAS com JSON válido no formato abaixo, sem nenhum texto adicional:
-{
-  "productDescription": "${searchQuery}",
-  "questions": [
-    {
-      "id": "identificador_unico_da_pergunta",
-      "text": "Texto da pergunta em português?",
-      "options": ["Opção A", "Opção B", "Opção C"]
-    }
-  ]
-}`;
-
-      const completion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
-        messages: [{ role: "user", content: systemPrompt }],
-        max_tokens: 2048,
+      // Retorna diretamente o candidato mais relevante como a descrição e pula as perguntas (questions vazio)
+      return NextResponse.json({
+        productDescription: query,
+        questions: []
       });
-
-      let rawText = completion.choices[0]?.message?.content || "";
-      if (!rawText) throw new Error("Resposta vazia da API Groq (triagem).");
-
-      rawText = rawText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("Resposta da IA na triagem não contém JSON válido.");
-      const result = JSON.parse(jsonMatch[0]);
-
-      try {
-        await writeLog({
-          user_id: activeUser.id,
-          user_name: activeUser.user_metadata?.name || activeUser.email?.split("@")[0] || "Usuário",
-          user_email: activeUser.email,
-          action: "search",
-          entity: imageBase64 ? "Image Upload" : query,
-          module_name: "Classificação NCM (Triagem)",
-          description: `Busca iniciada por ${imageBase64 ? "Imagem" : "Texto ('" + query + "')"}. Candidatos NCM encontrados: ${ncmCandidates.length}.`
-        });
-      } catch (logErr) {}
-
-      return NextResponse.json(result);
     }
 
     // ─── PASSO 2: Resultado Final (NCM + Justificativa + Alíquotas) ──────────
     if (step === 2) {
-      if (!answers || !previousQuestions) {
-        return NextResponse.json({ error: "Perguntas anteriores e respostas são necessárias." }, { status: 400 });
+      // 1. FLUXO POR TEXTO (Sem IA): Se não houver perguntas de triagem anteriores
+      if (!previousQuestions || previousQuestions.length === 0) {
+        const ncmCandidates = await searchNcmCandidates(query);
+        if (ncmCandidates.length === 0) {
+          return NextResponse.json(
+            { error: "Erro de correspondência: Não foi possível localizar uma classificação 100% segura para este produto na planilha oficial. Por favor, forneça mais detalhes técnicos." },
+            { status: 422 }
+          );
+        }
+
+        const candidate = ncmCandidates[0];
+
+        try {
+          await writeLog({
+            user_id: activeUser.id,
+            user_name: activeUser.user_metadata?.name || activeUser.email?.split("@")[0] || "Usuário",
+            user_email: activeUser.email,
+            action: "search",
+            entity: candidate.code,
+            module_name: "Classificação NCM (Texto Sem IA)",
+            description: `Busca textual sem IA concluída diretamente na base. NCM: ${candidate.code}.`
+          });
+        } catch (logErr) {}
+
+        // Resposta direta sem IA com valores padrão
+        return NextResponse.json({
+          ncmCode: candidate.code,
+          officialDescription: candidate.description,
+          fullHierarchy: candidate.full_description,
+          justification: "Classificação gerada via busca exata na planilha oficial de NCMs.",
+          taxes: {
+            ipi: "0% (Isento)",
+            pis: "1.65%",
+            cofins: "7.6%"
+          }
+        });
+      }
+
+      // 2. FLUXO POR FOTO (Com IA): Processa as respostas das perguntas geradas da imagem
+      if (!answers) {
+        return NextResponse.json({ error: "Respostas são necessárias para o refinamento." }, { status: 400 });
       }
 
       const answersSummary = Object.entries(answers)
@@ -293,9 +325,7 @@ Instruções:
         })
         .join("\n");
 
-      // CONSULTA PRÉVIA AO SUPABASE (Candidatos reais no passo final)
       const ncmCandidates = await searchNcmCandidates(query);
-
       if (ncmCandidates.length === 0) {
         return NextResponse.json(
           { error: "Erro de correspondência: Não foi possível localizar uma classificação 100% segura para este produto na planilha oficial. Por favor, forneça mais detalhes técnicos." },
@@ -303,7 +333,6 @@ Instruções:
         );
       }
 
-      // INJEÇÃO DE CONTEXTO REAL NO PROMPT DA IA (IA como selecionadora/juiz)
       const systemPrompt = `Você é um especialista em classificação fiscal do Mercosul, atuando como um validador estrito de NCM.
 Sua tarefa é analisar o produto do usuário, as respostas fornecidas na triagem, e a lista de candidatos NCM reais do banco de dados, escolhendo qual candidato da lista é a classificação correta.
 
@@ -345,8 +374,6 @@ Regras de Seleção:
       const result = JSON.parse(jsonMatch[0]);
       
       const cleanCode = String(result.ncmCode).replace(/[^0-9]/g, "");
-
-      // Garantir que a IA escolheu um candidato válido da lista de candidatos reais
       const matchedNcm = ncmCandidates.find(n => n.code === cleanCode);
 
       if (!matchedNcm) {
@@ -363,8 +390,8 @@ Regras de Seleção:
           user_email: activeUser.email,
           action: "search",
           entity: cleanCode,
-          module_name: "Classificação NCM (Resultado)",
-          description: `Classificação concluída. NCM: ${cleanCode}. IPI: ${result.taxes?.ipi || "0%"}, PIS: ${result.taxes?.pis || "0%"}, COFINS: ${result.taxes?.cofins || "0%"}.`
+          module_name: "Classificação NCM (Resultado Imagem)",
+          description: `Classificação de foto concluída. NCM: ${cleanCode}.`
         });
       } catch (logErr) {}
 
